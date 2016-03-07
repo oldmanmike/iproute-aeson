@@ -9,20 +9,30 @@ import            GHC.Generics
 import            Test.QuickCheck
 
 
-data ExtractedIPv4 = ExtractedIPv4
-  { ipv4:: IPv4
+data ExtractedIP = ExtractedIP
+  { ip :: IP
   } deriving (Show,Eq,Generic)
 
 
-data ExtractedIPv6 = ExtractedIPv6
-  { ipv6 :: IPv6
+instance ToJSON ExtractedIP
+instance FromJSON ExtractedIP
+
+
+instance Arbitrary IP where
+  arbitrary = do
+    x <- arbitrary :: Gen Bool
+    if x
+      then IPv4 <$> arbitrary
+      else IPv6 <$> arbitrary
+
+
+data ExtractedIPv4 = ExtractedIPv4
+  { ipv4 :: IPv4
   } deriving (Show,Eq,Generic)
 
 
 instance ToJSON ExtractedIPv4
 instance FromJSON ExtractedIPv4
-instance ToJSON ExtractedIPv6
-instance FromJSON ExtractedIPv6
 
 
 instance Arbitrary IPv4 where
@@ -32,6 +42,15 @@ instance Arbitrary IPv4 where
     let c = fmap fromEnum (arbitrary :: Gen Word8)
     let d = fmap fromEnum (arbitrary :: Gen Word8)
     liftM toIPv4 (sequence [a,b,c,d])
+
+
+data ExtractedIPv6 = ExtractedIPv6
+  { ipv6 :: IPv6
+  } deriving (Show,Eq,Generic)
+
+
+instance ToJSON ExtractedIPv6
+instance FromJSON ExtractedIPv6
 
 
 instance Arbitrary IPv6 where
@@ -47,6 +66,11 @@ instance Arbitrary IPv6 where
     liftM toIPv6 (sequence [a,b,c,d,e,f,g,h])
 
 
+prop_IdentityJSONIP :: IP -> Bool
+prop_IdentityJSONIP ip = (Just testData) == decode (encode testData)
+  where testData = ExtractedIP ip
+
+
 prop_IdentityJSONIPv4 :: IPv4 -> Bool
 prop_IdentityJSONIPv4 ip = (Just testData) == decode (encode testData)
   where testData = ExtractedIPv4 ip
@@ -59,5 +83,6 @@ prop_IdentityJSONIPv6 ip = (Just testData) == decode (encode testData)
 
 main :: IO ()
 main = do
+  quickCheck prop_IdentityJSONIP
   quickCheck prop_IdentityJSONIPv4
   quickCheck prop_IdentityJSONIPv6

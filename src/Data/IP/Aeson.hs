@@ -1,10 +1,10 @@
 module Data.IP.Aeson where
 
-import Control.Applicative
 import Control.Monad
 import Data.Aeson
 import Data.IP
 import qualified Data.Text as T
+
 
 instance ToJSON IP where
     toJSON = String . T.pack . show
